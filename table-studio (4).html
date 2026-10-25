@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Table Studio - สร้างตารางนำเสนอ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;700&family=Kanit:wght@300;400;500;600&family=Mitr:wght@300;400;500&family=Noto+Sans+Thai:wght@400;500;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;700&family=Pridi:wght@300;400;500;600&family=K2D:wght@400;500;700&family=Mali:wght@400;500;700&family=Itim&family=Chakra+Petch:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<style>
+:root{
+  --bg:#f4f5fb; --card:#ffffff; --ink:#1e2235; --muted:#6b7190; --line:#e3e6f2;
+  --accent:#5b5ef4; --accent2:#9b5cf6; --ok:#10b981; --danger:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Prompt','Sarabun',sans-serif;line-height:1.5}
+.hero{background:linear-gradient(120deg,#4f46e5,#9333ea 55%,#ec4899);color:#fff;padding:36px 20px 64px;text-align:center}
+.hero h1{margin:0 0 6px;font-size:34px;font-weight:700;letter-spacing:.3px}
+.hero p{margin:0;opacity:.9;font-weight:300}
+main{max-width:1100px;margin:-40px auto 60px;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border-radius:18px;padding:22px 24px;box-shadow:0 6px 24px rgba(40,40,100,.08)}
+.card h2{margin:0 0 14px;font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.card.fold>h2{cursor:pointer;user-select:none}
+.card.fold>h2::after{content:"▾";margin-left:auto;font-size:18px;color:var(--muted);transition:transform .2s}
+.card.fold.closed>h2{margin-bottom:0}
+.card.fold.closed>h2::after{transform:rotate(-90deg)}
+.card.fold.closed>:not(h2){display:none}
+.card h2 small{font-weight:400;color:var(--muted);font-size:13px}
+.n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:600;flex:none}
+input[type=text],input[type=number],select,textarea{font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;color:var(--ink);outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,94,244,.15)}
+input[type=text]{width:100%}
+.btn{font-family:inherit;font-size:14.5px;font-weight:500;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:9px 16px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:0;box-shadow:0 6px 16px rgba(91,94,244,.35)}
+.btn.primary:hover{color:#fff;filter:brightness(1.07)}
+.btn.big{font-size:17px;padding:13px 30px;border-radius:12px}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.muted{color:var(--muted);font-size:13.5px}
+.collist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:12px}
+.chip{display:flex;align-items:center;gap:6px;background:#f7f8fd;border:1.5px solid var(--line);border-radius:12px;padding:6px 8px}
+.chip .ci{width:24px;height:24px;border-radius:7px;background:#e8e9fb;color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:600;flex:none}
+.chip input{border:0;background:transparent;padding:6px;box-shadow:none!important}
+.x{border:0;background:transparent;color:#a0a5c0;cursor:pointer;font-size:15px;border-radius:6px;padding:4px 7px}
+.x:hover{background:#fee2e2;color:var(--danger)}
+.gridwrap{overflow:auto;border:1.5px solid var(--line);border-radius:12px;margin-top:14px;max-height:420px}
+#grid{border-collapse:collapse;width:100%;min-width:480px}
+#grid th{position:sticky;top:0;background:#eef0fb;font-size:14px;padding:9px 10px;text-align:left;z-index:1;border-bottom:1.5px solid var(--line)}
+#grid td{padding:5px;border-bottom:1px solid var(--line);vertical-align:top}
+#grid td.rn,#grid th.rn{width:38px;text-align:center;color:var(--muted);font-size:13px}
+#grid textarea{width:100%;min-width:140px;resize:vertical;border-color:transparent;background:#fafbff;font-size:14px}
+.hint{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.group h3{margin:16px 0 10px;font-size:15px;font-weight:600;color:var(--accent)}
+.group:first-child h3{margin-top:0}
+.styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.scard{font-family:inherit;border:2px solid transparent;background:#f7f8fd;border-radius:14px;padding:8px;cursor:pointer;text-align:center;transition:.15s;color:var(--ink)}
+.scard:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(40,40,100,.12)}
+.scard.sel{border-color:var(--accent);background:#eef0ff;box-shadow:0 0 0 3px rgba(91,94,244,.18)}
+.scard span{display:block;font-size:13px;margin-top:6px;font-weight:500}
+.mini{padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,.08)}
+.mbox{border:1px solid;border-radius:5px;overflow:hidden}
+.mt{height:11px}
+.mr{display:flex;height:14px}
+.mr i{flex:1;border-right:1px solid;border-bottom:1px solid;display:flex;align-items:center;padding:0 4px}
+.mr:last-child i{border-bottom:0}
+.mr i:last-child{border-right:0}
+.mr i b{display:block;height:5px;width:75%;border-radius:2px}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.ctrl label.t{display:block;font-size:13.5px;color:var(--muted);margin-bottom:6px}
+.ctrl select{width:100%}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctrl .val{font-weight:600;color:var(--accent)}
+.colorrow{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.colorrow label{display:flex;align-items:center;gap:8px;font-size:14px}
+input[type=color]{width:42px;height:34px;border:1.5px solid var(--line);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
+.chk{display:flex;align-items:center;gap:8px;font-size:14.5px;cursor:pointer}
+.chk input{accent-color:var(--accent);width:17px;height:17px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+#previewBox{width:100%;overflow:hidden;border-radius:12px;background:#e9ebf5 repeating-conic-gradient(#e4e6f2 0 25%,#eef0f8 0 50%) 0 0/20px 20px;display:none}
+#slideHost{transform-origin:top left}
+#placeholder{border:2px dashed var(--line);border-radius:14px;text-align:center;padding:46px 12px;color:var(--muted)}
+.dl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(30px);background:#1e2235;color:#fff;padding:11px 20px;border-radius:12px;font-size:14.5px;opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+[hidden]{display:none!important}
+.mode{display:flex;flex-direction:column;gap:16px}
+.modebar{display:flex;gap:6px;background:#fff;padding:6px;border-radius:16px;box-shadow:0 6px 24px rgba(40,40,100,.14);position:relative;align-self:center}
+.mbtn{font-family:inherit;font-size:15px;font-weight:500;border:0;background:transparent;color:var(--muted);padding:10px 22px;border-radius:12px;cursor:pointer;transition:.15s}
+.mbtn:hover{color:var(--accent)}
+.mbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 12px rgba(91,94,244,.35)}
+.qgrid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px}
+@media(max-width:760px){.qgrid{grid-template-columns:1fr}}
+.qdrop{display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;border:2px dashed #c9cdea;border-radius:16px;background:#f7f8fd;cursor:pointer;overflow:hidden;text-align:center;color:var(--muted);transition:.15s;line-height:1.6}
+.qdrop:hover,.qdrop.drag{border-color:var(--accent);background:#eef0ff}
+.qdrop img{width:100%;height:100%;object-fit:cover;display:block}
+.qdrop .big{font-size:44px}
+.qdrop small{opacity:.8}
+.lbl{display:block;font-size:13.5px;color:var(--muted);margin:14px 0 6px}
+.lbl:first-child{margin-top:0}
+.qwrap{position:relative}
+.qwrap textarea{width:100%;padding:38px 48px;font-size:16px;resize:vertical;line-height:1.6;min-height:150px}
+.qm{position:absolute;font-size:64px;line-height:1;color:var(--accent);font-family:Georgia,'Times New Roman',serif;font-weight:700;pointer-events:none;opacity:.85}
+.qm.o{left:14px;top:10px}
+.qm.c{right:16px;bottom:-16px}
+.qmini{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.12)}
+.qmini>i{position:absolute;display:block}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Table Studio</h1>
+  <p>สร้างตารางนำเสนอสวย ๆ ในไม่กี่คลิก — ดาวน์โหลดเป็น PNG หรือ PowerPoint</p>
+</header>
+
+<main>
+  <div class="modebar">
+    <button class="mbtn active" data-mode="table">📊 โหมดตาราง</button>
+    <button class="mbtn" data-mode="quote">💬 โหมดภาพ + คำพูด</button>
+  </div>
+
+  <div id="modeTable" class="mode">
+  <!-- 1 -->
+  <section class="card">
+    <h2><span class="n">1</span>หัวข้อตาราง</h2>
+    <input type="text" id="title" placeholder="เช่น ภูมิทัศน์สื่อ / The Media Spectrum Matrix">
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="btnSample">✨ โหลดตัวอย่างตามภาพ</button>
+      <span class="muted">กดเพื่อเติมข้อมูลตัวอย่าง "Media Spectrum Matrix" ลงในฟอร์มทั้งหมด</span>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card">
+    <h2><span class="n">2</span>ชื่อคอลัมน์ <small>(เริ่มต้น 3 คอลัมน์ เพิ่มได้ไม่จำกัด)</small></h2>
+    <div class="collist" id="colList"></div>
+    <div class="row">
+      <button class="btn" id="addCol">＋ เพิ่มคอลัมน์</button>
+      <span class="muted" id="colCount"></span>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card">
+    <h2><span class="n">3</span>จำนวนแถว &amp; ข้อมูลในตาราง <small>(เริ่มต้น 3 แถว เพิ่มได้ไม่จำกัด)</small></h2>
+    <div class="row">
+      <label class="row" style="gap:8px">จำนวนแถว
+        <input type="number" id="rowCount" min="1" max="500" style="width:90px">
+      </label>
+      <button class="btn" id="addRow">＋ เพิ่มแถว</button>
+      <span class="muted">กดปุ่ม ✕ ท้ายแถว/คอลัมน์ เพื่อลบ · ในช่องกรอกข้อมูลกด Enter เพื่อขึ้นบรรทัดใหม่ได้</span>
+    </div>
+    <div class="gridwrap"><table id="grid"></table></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="card">
+    <h2><span class="n">4</span>นำเข้าไฟล์ Excel</h2>
+    <div class="row">
+      <label class="btn" for="xlsxFile">📂 เลือกไฟล์ Excel / CSV</label>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xls,.xlsm,.csv" hidden>
+      <span class="muted" id="xlsxMsg">ยังไม่ได้เลือกไฟล์</span>
+    </div>
+    <p class="hint">ระบบอ่านชีตแรก — แถวแรกจะเป็นชื่อคอลัมน์ แถวถัดไปเป็นข้อมูล (จะแทนที่ข้อมูลที่กรอกไว้)</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="card fold">
+    <h2><span class="n">5</span>รูปแบบตาราง <small>(30 แบบ แบ่งเป็น 5 กลุ่ม)</small></h2>
+    <div id="styleList"></div>
+  </section>
+
+  <!-- 6 -->
+  <section class="card">
+    <h2><span class="n">6</span>ตัวอักษร</h2>
+    <div class="ctrls">
+      <div class="ctrl">
+        <label class="t">รูปแบบตัวอักษร (ฟอนต์)</label>
+        <select id="fontSel"></select>
+      </div>
+      <div class="ctrl">
+        <label class="t">ขนาดหัวข้อตาราง: <span class="val" id="vT"></span> px</label>
+        <input type="range" id="sizeT" min="20" max="90" step="1">
+      </div>
+      <div class="ctrl">
+        <label class="t">ขนาดชื่อคอลัมน์: <span class="val" id="vH"></span> px</label>
+        <input type="range" id="sizeH" min="14" max="64" step="1">
+      </div>
+      <div class="ctrl">
+        <label class="t">ขนาดข้อความในตาราง: <span class="val" id="vB"></span> px</label>
+        <input type="range" id="sizeB" min="12" max="56" step="1">
+      </div>
+      <div class="ctrl">
+        <label class="t">การจัดตำแหน่งข้อความในตาราง</label>
+        <select id="alignSel">
+          <option value="left">ชิดซ้าย</option>
+          <option value="center">กึ่งกลาง</option>
+          <option value="right">ชิดขวา</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label class="t">การจัดตำแหน่งหัวข้อตาราง</label>
+        <select id="tAlignSel">
+          <option value="left">ชิดซ้าย</option>
+          <option value="center">กึ่งกลาง</option>
+          <option value="right">ชิดขวา</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <label class="t muted" style="display:block;margin-bottom:8px;font-size:13.5px">สีตัวอักษร (ค่าเริ่มต้นตามรูปแบบที่เลือก)</label>
+      <div class="colorrow">
+        <label><input type="color" id="colT"> หัวข้อตาราง</label>
+        <label><input type="color" id="colH"> ชื่อคอลัมน์</label>
+        <label><input type="color" id="colB"> ข้อความในตาราง</label>
+        <button class="btn" id="resetColors">↺ ใช้สีตามรูปแบบ</button>
+        <label class="chk"><input type="checkbox" id="boldHead"> ชื่อคอลัมน์ตัวหนา</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- process -->
+  <section class="card actions">
+    <button class="btn primary big" id="btnProcess">⚡ ประมวลผล</button>
+    <button class="btn danger" id="btnReset">⟲ Reset หน้า</button>
+  </section>
+
+  <!-- result -->
+  <section class="card" id="resultCard">
+    <h2><span class="n">7</span>ผลลัพธ์ตาราง</h2>
+    <div id="placeholder">ตั้งค่าด้านบนให้เรียบร้อย แล้วกดปุ่ม <b>"ประมวลผล"</b> เพื่อดูภาพตาราง</div>
+    <div id="previewBox"><div id="slideHost"></div></div>
+    <div class="dl">
+      <button class="btn" id="dlPng" disabled>🖼 ดาวน์โหลด PNG</button>
+      <button class="btn" id="dlPptx" disabled>📊 ดาวน์โหลด PowerPoint (.pptx)</button>
+      <label class="chk"><input type="checkbox" id="pptxImg"> ใส่เป็นรูปภาพในสไลด์ (หน้าตาตรงกับตัวอย่าง 100% แต่แก้ไขตารางไม่ได้)</label>
+    </div>
+  </section>
+  </div><!-- /modeTable -->
+
+  <!-- ================= โหมดภาพ + คำพูด ================= -->
+  <div id="modeQuote" class="mode" hidden>
+    <section class="card">
+      <h2><span class="n">1</span>รูปภาพ &amp; คำพูด</h2>
+      <div class="qgrid">
+        <div>
+          <label class="lbl">รูปภาพ</label>
+          <label class="qdrop" id="qDrop" for="qImgFile">
+            <img id="qThumb" alt="" hidden>
+            <div id="qDropHint"><div class="big">🖼</div>คลิกเพื่อเลือกรูป หรือลากรูปมาวางที่นี่<br><small>JPG / PNG / WEBP</small></div>
+          </label>
+          <input type="file" id="qImgFile" accept="image/*" hidden>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="qImgClear" disabled>✕ ลบรูป</button>
+            <label class="row" style="gap:6px;font-size:14px">การจัดรูป
+              <select id="qFit">
+                <option value="cover">ครอบเต็มกรอบ (ตัดขอบ)</option>
+                <option value="contain">แสดงทั้งภาพ</option>
+              </select>
+            </label>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="row" style="gap:6px;font-size:14px">รูปทรงรูปภาพ
+              <select id="qShape">
+                <option value="cs">⚪ วงกลมเล็ก</option>
+                <option value="cl">⚪ วงกลมใหญ่</option>
+                <option value="rs">◻ สี่เหลี่ยมเล็ก</option>
+                <option value="rl">◻ สี่เหลี่ยมใหญ่</option>
+                <option value="es">⬭ วงรีเล็ก</option>
+                <option value="el">⬭ วงรีใหญ่</option>
+              </select>
+            </label>
+            <label class="row" style="gap:6px;font-size:14px">ตำแหน่งรูป
+              <select id="qSide">
+                <option value="left">อยู่ซ้ายของข้อความ</option>
+                <option value="right">อยู่ขวาของข้อความ</option>
+              </select>
+            </label>
+          </div>
+          <div class="muted" id="qImgInfo" style="margin-top:6px"></div>
+        </div>
+        <div>
+          <label class="lbl">คำพูด (ระบบจะใส่เครื่องหมายคำพูดให้ในสไลด์)</label>
+          <div class="qwrap">
+            <span class="qm o">“</span>
+            <textarea id="qText" rows="6" placeholder="พิมพ์คำพูดที่นี่..."></textarea>
+            <span class="qm c">”</span>
+          </div>
+          <label class="lbl">ชื่อผู้พูด</label>
+          <input type="text" id="qName" placeholder="เช่น สมชาย ใจดี">
+          <label class="lbl">ตำแหน่ง / ที่มา (ไม่บังคับ)</label>
+          <input type="text" id="qRole" placeholder="เช่น ผู้อำนวยการ บริษัท ABC">
+          <div class="row" style="margin-top:14px">
+            <button class="btn" id="qSample">✨ เติมข้อความตัวอย่าง</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card fold">
+      <h2><span class="n">2</span>รูปแบบสไลด์ <small>(10 แบบ)</small></h2>
+      <div id="qStyleList" class="styles"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">3</span>ตัวอักษร</h2>
+      <div class="ctrls">
+        <div class="ctrl">
+          <label class="t">รูปแบบตัวอักษร (ฟอนต์)</label>
+          <select id="qFont"></select>
+        </div>
+        <div class="ctrl">
+          <label class="t">ขนาดคำพูด: <span class="val" id="vQQ"></span> px</label>
+          <input type="range" id="qSizeQ" min="20" max="72" step="1">
+        </div>
+        <div class="ctrl">
+          <label class="t">ขนาดชื่อผู้พูด: <span class="val" id="vQN"></span> px</label>
+          <input type="range" id="qSizeN" min="16" max="56" step="1">
+        </div>
+      </div>
+      <div style="margin-top:18px">
+        <label class="muted" style="display:block;margin-bottom:8px;font-size:13.5px">สีตัวอักษร (ค่าเริ่มต้นตามรูปแบบที่เลือก)</label>
+        <div class="colorrow">
+          <label><input type="color" id="qColQ"> คำพูด</label>
+          <label><input type="color" id="qColN"> ชื่อผู้พูด</label>
+          <button class="btn" id="qResetColors">↺ ใช้สีตามรูปแบบ</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card actions">
+      <button class="btn primary big" id="qBtnProcess">⚡ ประมวลผล</button>
+      <button class="btn danger" id="qBtnReset">⟲ Reset โหมดนี้</button>
+    </section>
+
+    <section class="card" id="qResultCard">
+      <h2><span class="n">4</span>ผลลัพธ์สไลด์</h2>
+      <div id="qPlaceholder" class="placeholder-box" style="border:2px dashed var(--line);border-radius:14px;text-align:center;padding:46px 12px;color:var(--muted)">แนบรูป ใส่คำพูดและชื่อผู้พูด แล้วกดปุ่ม <b>"ประมวลผล"</b> เพื่อดูภาพสไลด์</div>
+      <div class="muted" id="qFitInfo" style="margin-bottom:8px;display:none"></div>
+      <div id="qPreviewBox" style="width:100%;overflow:hidden;border-radius:12px;background:#e9ebf5;display:none"><div id="qSlideHost" style="transform-origin:top left"></div></div>
+      <div class="dl">
+        <button class="btn" id="qDlPng" disabled>🖼 ดาวน์โหลด PNG</button>
+        <button class="btn" id="qDlPptx" disabled>📊 ดาวน์โหลด PowerPoint (.pptx)</button>
+        <label class="chk"><input type="checkbox" id="qPptxImg"> ใส่เป็นรูปภาพในสไลด์ (หน้าตาตรงกับตัวอย่าง 100% แต่แก้ไขข้อความไม่ได้)</label>
+      </div>
+    </section>
+  </div><!-- /modeQuote -->
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ============ Helpers ============ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const css = v => Array.isArray(v) ? `linear-gradient(${v[2] || 135}deg,${v[0]},${v[1]})` : v;
+const solid = v => {
+  let c = Array.isArray(v) ? v[0] : v;
+  if (/^#[0-9a-f]{3}$/i.test(c)) c = '#' + [...c.slice(1)].map(x => x + x).join('');
+  return c;
+};
+const hex = v => solid(v).replace('#','').toUpperCase();
+const G = (a,b,d=135) => [a,b,d];
+function toast(msg, ms=2600){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+/* ============ 30 Styles ============ */
+const base = {bg:'#ffffff',tBg:'#333333',tC:'#ffffff',hBg:'#eeeeee',hC:'#111111',bBg:'#ffffff',aBg:null,bC:'#222222',bd:'#dddddd',w:1,r:16,ln:'all',hl:null};
+const S = (g,n,o) => ({g,n,...base,...o});
+const GROUPS = ['พาสเทลนุ่มนวล','สีสันสดใส','ไล่เฉดสีทันสมัย','มืด & นีออน','มินิมอล & ไฮไลต์'];
+const STYLES = [
+  // --- กลุ่ม 1: พาสเทล
+  S(0,'พีชครีม',{bg:'#fff7f2',tBg:'#ffb899',tC:'#5a2a14',hBg:'#ffd9c7',hC:'#6b3419',aBg:'#fff1ea',bC:'#4a3328',bd:'#f3c1a8',r:18}),
+  S(0,'ลาเวนเดอร์',{bg:'#f6f2ff',tBg:'#b9a6f5',tC:'#2e1f63',hBg:'#ddd2fb',hC:'#3a2a78',aBg:'#f3eefe',bC:'#33294f',bd:'#d3c6f7',r:18}),
+  S(0,'มินต์สดชื่น',{bg:'#effaf5',tBg:'#8fdcbc',tC:'#0f4a35',hBg:'#c9f0e0',hC:'#14583f',aBg:'#eaf8f2',bC:'#1f3d33',bd:'#b6e5d0',r:18}),
+  S(0,'สกายบลู',{bg:'#eef7ff',tBg:'#8cc8f5',tC:'#0c3a5e',hBg:'#c8e5fb',hC:'#0f4673',aBg:'#eaf4fd',bC:'#1d3447',bd:'#b4d8f2',r:18}),
+  S(0,'เลมอนครีม',{bg:'#fffdea',tBg:'#f6dc63',tC:'#4d4000',hBg:'#fbefa6',hC:'#5a4a00',aBg:'#fffbe0',bC:'#43391a',bd:'#efdf8a',r:18}),
+  S(0,'กุหลาบหวาน',{bg:'#fff0f5',tBg:'#f59ab9',tC:'#5c0f30',hBg:'#fbc9d9',hC:'#6b1638',aBg:'#ffeaf1',bC:'#4d2234',bd:'#f3b7cb',r:18}),
+  // --- กลุ่ม 2: สดใส
+  S(1,'โอเชียนบลู',{bg:'#f1f6ff',tBg:'#1d4ed8',tC:'#ffffff',hBg:'#3b82f6',hC:'#ffffff',aBg:'#eaf1ff',bC:'#1e293b',bd:'#bfd3fb',r:14}),
+  S(1,'ซันเซ็ตส้ม',{bg:'#fff8f1',tBg:'#c2410c',tC:'#ffffff',hBg:'#f97316',hC:'#ffffff',aBg:'#ffefe0',bC:'#3b2a1d',bd:'#fdd0a8',r:14}),
+  S(1,'เอมเมอรัลด์',{bg:'#f0fdf6',tBg:'#047857',tC:'#ffffff',hBg:'#10b981',hC:'#ffffff',aBg:'#e6faf0',bC:'#14352a',bd:'#a7ecce',r:14}),
+  S(1,'เบอร์รี่ชมพู',{bg:'#fdf2f8',tBg:'#9d174d',tC:'#ffffff',hBg:'#ec4899',hC:'#ffffff',aBg:'#fde8f3',bC:'#3f1730',bd:'#f6b8d7',r:14}),
+  S(1,'ไวโอเล็ต',{bg:'#f7f3ff',tBg:'#5b21b6',tC:'#ffffff',hBg:'#8b5cf6',hC:'#ffffff',aBg:'#efe9ff',bC:'#2a1a4d',bd:'#cdbdfb',r:14}),
+  S(1,'ทับทิมแดง',{bg:'#fff3f3',tBg:'#b91c1c',tC:'#ffffff',hBg:'#ef4444',hC:'#ffffff',aBg:'#ffe9e9',bC:'#3f1515',bd:'#f8b4b4',r:14}),
+  // --- กลุ่ม 3: ไล่เฉด
+  S(2,'ออโรร่า',{bg:G('#f0f9ff','#f5f0ff'),tBg:G('#06b6d4','#8b5cf6'),tC:'#ffffff',hBg:G('#67e8f9','#c4b5fd'),hC:'#0b1f3a',aBg:'#f4f1ff',bC:'#1e293b',bd:'#d6dcf5',r:20}),
+  S(2,'ซันไรส์',{bg:G('#fff7ed','#fef2f2'),tBg:G('#f97316','#ec4899'),tC:'#ffffff',hBg:G('#fdba74','#f9a8d4'),hC:'#4a1d12',aBg:'#fff3ea',bC:'#3b2a24',bd:'#f7cdb5',r:20}),
+  S(2,'ดีพโอเชียน',{bg:G('#eff6ff','#ecfeff'),tBg:G('#1e3a8a','#0891b2'),tC:'#ffffff',hBg:G('#2563eb','#06b6d4'),hC:'#ffffff',aBg:'#eaf6fb',bC:'#0f2a3d',bd:'#b5dbe8',r:20}),
+  S(2,'แคนดี้ป๊อป',{bg:G('#fdf2f8','#eff6ff'),tBg:G('#f472b6','#60a5fa'),tC:'#ffffff',hBg:G('#f9a8d4','#93c5fd'),hC:'#3b1a4a',aBg:'#fbf0fa',bC:'#3b2a4a',bd:'#e6c8ee',r:20}),
+  S(2,'มินต์ไลม์',{bg:G('#ecfdf5','#f7fee7'),tBg:G('#10b981','#84cc16'),tC:'#ffffff',hBg:G('#6ee7b7','#bef264'),hC:'#12431f',aBg:'#effbe9',bC:'#1c3a24',bd:'#c3e9b0',r:20}),
+  S(2,'ทไวไลท์',{bg:G('#1e1b4b','#312e81'),tBg:G('#7c3aed','#db2777'),tC:'#ffffff',hBg:G('#4f46e5','#9333ea'),hC:'#ffffff',bBg:'#2a2766',aBg:'#332f7a',bC:'#e9e7ff',bd:'#4b47a0',r:20}),
+  // --- กลุ่ม 4: มืด & นีออน
+  S(3,'นีออนไซเบอร์',{bg:'#0b0f1a',tBg:'#111827',tC:'#22f3ff',hBg:'#0f172a',hC:'#ff3df2',bBg:'#0b1020',aBg:'#0f162b',bC:'#d7f9ff',bd:'#22f3ff',w:2,r:10}),
+  S(3,'มิดไนท์โกลด์',{bg:'#0f0f12',tBg:'#1a1a20',tC:'#f5c451',hBg:'#f5c451',hC:'#1a1405',bBg:'#16161b',aBg:'#1c1c23',bC:'#f1ead6',bd:'#3a3a46',r:12}),
+  S(3,'คาร์บอน',{bg:'#18181b',tBg:'#27272a',tC:'#ffffff',hBg:'#3f3f46',hC:'#ffffff',bBg:'#1f1f23',aBg:'#26262b',bC:'#e4e4e7',bd:'#3f3f46',r:12}),
+  S(3,'เมทริกซ์',{bg:'#020a04',tBg:'#052e16',tC:'#4ade80',hBg:'#064e1f',hC:'#86efac',bBg:'#03140a',aBg:'#05200f',bC:'#bbf7d0',bd:'#16a34a',w:2,r:6}),
+  S(3,'ซินธ์เวฟ',{bg:G('#2b0a4a','#0b1b4d'),tBg:G('#ff2e93','#7928ca'),tC:'#ffffff',hBg:'#3b1c6e',hC:'#ffd1f0',bBg:'#1d1040',aBg:'#26144f',bC:'#f3e8ff',bd:'#a855f7',r:16}),
+  S(3,'ลาวาแดง',{bg:'#140808',tBg:G('#dc2626','#f97316'),tC:'#ffffff',hBg:'#3a0f0f',hC:'#fdba74',bBg:'#1c0b0b',aBg:'#251010',bC:'#fde6d8',bd:'#7f1d1d',r:12}),
+  // --- กลุ่ม 5: มินิมอล & ไฮไลต์
+  S(4,'นักสืบ (ตามภาพ)',{bg:G('#fbe3ea','#dfe7f7',160),tBg:'#a8e6c3',tC:'#243b2f',hBg:'#f7fbff',hC:'#222222',bBg:'#f3f6fb',aBg:'#f3f6fb',bC:'#2a2f33',bd:'#3b3b3b',w:2,r:0,hl:'#f5d84a'}),
+  S(4,'ขาว-ดำ มินิมอล',{bg:'#ffffff',tBg:'#111111',tC:'#ffffff',hBg:'#f3f4f6',hC:'#111111',bC:'#222222',bd:'#e5e7eb',r:10,ln:'h'}),
+  S(4,'เส้นบางสะอาด',{bg:'#ffffff',tBg:'#ffffff',tC:'#0f172a',hBg:'#ffffff',hC:'#2563eb',bC:'#334155',bd:'#cbd5e1',r:0,ln:'h'}),
+  S(4,'หนังสือพิมพ์',{bg:'#f5efe0',tBg:'#1f1a14',tC:'#f5efe0',hBg:'#e8dfc8',hC:'#1f1a14',bBg:'#faf6ea',aBg:'#f3ecd8',bC:'#2b2418',bd:'#1f1a14',w:2,r:0}),
+  S(4,'สมุดโน้ตไฮไลต์',{bg:'#fffef5',tBg:'#fde68a',tC:'#422006',hBg:'#fffef5',hC:'#7c2d12',bBg:'#fffef5',bC:'#44403c',bd:'#a8a29e',r:6,ln:'h',hl:'#fcd34d'}),
+  S(4,'บลูพริ้นท์',{bg:'#0b3d91',tBg:'#0a2f6e',tC:'#ffffff',hBg:'#1352b8',hC:'#ffffff',bBg:'#0d47a8',aBg:'#1050b5',bC:'#e6f0ff',bd:'#9cc2ff',r:0}),
+];
+
+const FONTS = [
+  ['Prompt','Prompt'],['Sarabun','Sarabun (สารบัญ)'],['Kanit','Kanit'],['Mitr','Mitr (หนา โค้งมน)'],
+  ['Noto Sans Thai','Noto Sans Thai'],['IBM Plex Sans Thai Looped','IBM Plex Sans Thai Looped'],
+  ['Pridi','Pridi (มีหัว)'],['K2D','K2D'],['Mali','Mali (ลายมือ)'],['Itim','Itim (ลายมือ)'],['Chakra Petch','Chakra Petch (เทคโน)']
+];
+
+/* ============ State ============ */
+function freshState(){
+  return {
+    title:'หัวข้อตาราง',
+    cols:['คอลัมน์ 1','คอลัมน์ 2','คอลัมน์ 3'],
+    rows:[['','',''],['','',''],['','','']],
+    style:0, font:'Prompt',
+    sizes:{t:44,h:28,b:24},
+    colors:{t:null,h:null,b:null},
+    boldHead:true, align:'center', tAlign:'center'
+  };
+}
+let state = freshState();
+let processed = false;
+
+const eff = () => {
+  const st = STYLES[state.style];
+  return { t: state.colors.t || solid(st.tC), h: state.colors.h || solid(st.hC), b: state.colors.b || solid(st.bC) };
+};
+
+/* ============ UI render ============ */
+function renderCols(){
+  const n = state.cols.length;
+  $('colList').innerHTML = state.cols.map((c,i)=>
+    `<div class="chip"><span class="ci">${i+1}</span>
+      <input type="text" data-col="${i}" value="${esc(c)}" placeholder="ชื่อคอลัมน์ ${i+1}">
+      <button class="x" data-delcol="${i}" title="ลบคอลัมน์" ${n<=1?'disabled style="opacity:.3;cursor:not-allowed"':''}>✕</button></div>`
+  ).join('');
+  $('colCount').textContent = `ตอนนี้มี ${n} คอลัมน์`;
+}
+function renderGrid(){
+  let h = '<thead><tr><th class="rn">#</th>';
+  state.cols.forEach((c,i)=> h += `<th data-h="${i}">${esc(c)||'&nbsp;'}</th>`);
+  h += '<th style="width:36px"></th></tr></thead><tbody>';
+  state.rows.forEach((r,ri)=>{
+    h += `<tr><td class="rn">${ri+1}</td>`;
+    r.forEach((v,ci)=> h += `<td><textarea rows="2" data-r="${ri}" data-c="${ci}" placeholder="ข้อความ...">\n${esc(v)}</textarea></td>`);
+    h += `<td><button class="x" data-delrow="${ri}" title="ลบแถว" ${state.rows.length<=1?'disabled style="opacity:.3;cursor:not-allowed"':''}>✕</button></td></tr>`;
+  });
+  $('grid').innerHTML = h + '</tbody>';
+  $('rowCount').value = state.rows.length;
+}
+function updateGridHeads(){
+  document.querySelectorAll('#grid th[data-h]').forEach(th=>{
+    th.innerHTML = esc(state.cols[+th.dataset.h]) || '&nbsp;';
+  });
+}
+function miniHTML(st){
+  const row = (bg,withBar) => `<div class="mr" style="background:${css(bg)}">` +
+    [0,1,2].map(()=>`<i style="border-color:${st.bd}">${withBar}</i>`).join('') + '</div>';
+  const barH = st.hl ? `<b style="background:${st.hl}"></b>` : `<b style="background:${solid(st.hC)};opacity:.7"></b>`;
+  const barB = `<b style="background:${solid(st.bC)};opacity:.35"></b>`;
+  return `<div class="mini" style="background:${css(st.bg)}"><div class="mbox" style="border-color:${st.bd}">
+    <div class="mt" style="background:${css(st.tBg)}"></div>
+    ${row(st.hBg,barH)}${row(st.bBg,barB)}${row(st.aBg||st.bBg,barB)}</div></div>`;
+}
+function renderStyles(){
+  let h = '';
+  GROUPS.forEach((g,gi)=>{
+    h += `<div class="group"><h3>${g}</h3><div class="styles">`;
+    STYLES.forEach((st,i)=>{
+      if (st.g !== gi) return;
+      h += `<button class="scard ${i===state.style?'sel':''}" data-s="${i}">${miniHTML(st)}<span>${String(i+1).padStart(2,'0')} · ${st.n}</span></button>`;
+    });
+    h += '</div></div>';
+  });
+  $('styleList').innerHTML = h;
+}
+function syncColorInputs(){
+  const e = eff();
+  $('colT').value = e.t; $('colH').value = e.h; $('colB').value = e.b;
+}
+function syncAll(){
+  $('title').value = state.title;
+  renderCols(); renderGrid(); renderStyles();
+  $('fontSel').value = state.font;
+  ['T','H','B'].forEach(k=>{ $('size'+k).value = state.sizes[k.toLowerCase()]; $('v'+k).textContent = state.sizes[k.toLowerCase()]; });
+  $('alignSel').value = state.align; $('tAlignSel').value = state.tAlign;
+  $('boldHead').checked = state.boldHead;
+  syncColorInputs();
+}
+
+/* ============ Structure actions ============ */
+function addCol(){
+  state.cols.push(`คอลัมน์ ${state.cols.length+1}`);
+  state.rows.forEach(r=>r.push(''));
+  renderCols(); renderGrid(); autoRefresh();
+  const last = $('colList').querySelector('.chip:last-child input'); if (last){ last.focus(); last.select(); }
+}
+function delCol(i){
+  if (state.cols.length<=1) return;
+  state.cols.splice(i,1); state.rows.forEach(r=>r.splice(i,1));
+  renderCols(); renderGrid(); autoRefresh();
+}
+function addRow(){
+  state.rows.push(state.cols.map(()=>''));
+  renderGrid(); autoRefresh();
+  const w = document.querySelector('.gridwrap'); w.scrollTop = w.scrollHeight;
+}
+function delRow(i){
+  if (state.rows.length<=1) return;
+  state.rows.splice(i,1); renderGrid(); autoRefresh();
+}
+function setRowCount(n){
+  n = Math.max(1, Math.min(500, parseInt(n)||1));
+  while (state.rows.length < n) state.rows.push(state.cols.map(()=>''));
+  while (state.rows.length > n) state.rows.pop();
+  renderGrid(); autoRefresh();
+}
+
+/* ============ Events ============ */
+$('title').addEventListener('input', e=>{ state.title = e.target.value; autoRefresh(); });
+$('addCol').onclick = addCol;
+$('addRow').onclick = addRow;
+$('rowCount').addEventListener('change', e=> setRowCount(e.target.value));
+$('colList').addEventListener('input', e=>{
+  if (e.target.dataset.col !== undefined){ state.cols[+e.target.dataset.col] = e.target.value; updateGridHeads(); autoRefresh(); }
+});
+$('colList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-delcol]'); if (b) delCol(+b.dataset.delcol);
+});
+$('grid').addEventListener('input', e=>{
+  const t = e.target;
+  if (t.dataset.r !== undefined){ state.rows[+t.dataset.r][+t.dataset.c] = t.value; autoRefresh(); }
+});
+$('grid').addEventListener('click', e=>{
+  const b = e.target.closest('[data-delrow]'); if (b) delRow(+b.dataset.delrow);
+});
+$('styleList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-s]'); if (!b) return;
+  state.style = +b.dataset.s;
+  document.querySelectorAll('.scard').forEach(x=>x.classList.toggle('sel', x===b));
+  syncColorInputs(); autoRefresh();
+});
+
+$('fontSel').innerHTML = FONTS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('');
+$('fontSel').addEventListener('change', e=>{ state.font = e.target.value; autoRefresh(); });
+[['T','t'],['H','h'],['B','b']].forEach(([K,k])=>{
+  $('size'+K).addEventListener('input', e=>{ state.sizes[k] = +e.target.value; $('v'+K).textContent = e.target.value; autoRefresh(); });
+  $('col'+K).addEventListener('input', e=>{ state.colors[k] = e.target.value; autoRefresh(); });
+});
+$('resetColors').onclick = ()=>{ state.colors = {t:null,h:null,b:null}; syncColorInputs(); autoRefresh(); toast('ใช้สีตัวอักษรตามรูปแบบแล้ว'); };
+$('boldHead').addEventListener('change', e=>{ state.boldHead = e.target.checked; autoRefresh(); });
+$('alignSel').addEventListener('change', e=>{ state.align = e.target.value; autoRefresh(); });
+$('tAlignSel').addEventListener('change', e=>{ state.tAlign = e.target.value; autoRefresh(); });
+
+$('btnSample').onclick = ()=>{
+  state.title = 'The Media Spectrum Matrix';
+  state.cols = ['สื่อบุคคล','สื่อดั้งเดิม','สื่อดิจิทัล','สื่อสังเคราะห์'];
+  state.rows = [[
+    'การพูดคุย\nบอกเล่า\n\nจุดอ่อน: ข้อมูลบิดเบือนจากความทรงจำ',
+    'วิทยุ โทรทัศน์\nหนังสือพิมพ์\n\nผู้ควบคุม: Gatekeeper (บรรณาธิการ)\n\nจุดอ่อน: นำเสนอได้จำกัด',
+    'Facebook, TikTok, LINE, YouTube\n\nผู้ควบคุม: Algorithm\n\nจุดอ่อน: ข่าวลือกระจายไว',
+    'ภาพ เสียง วิดีโอจาก AI\n\nผู้ควบคุม: Prompter (ผู้ป้อนคำสั่ง)\n\nจุดอ่อน: แยกความจริงด้วยตาเปล่าได้ยาก'
+  ]];
+  state.style = 24; state.font = 'IBM Plex Sans Thai Looped';
+  state.sizes = {t:34,h:30,b:22}; state.colors = {t:null,h:null,b:null};
+  state.align = 'center'; state.tAlign = 'center'; state.boldHead = true;
+  syncAll(); autoRefresh(); toast('โหลดตัวอย่างแล้ว — กด "ประมวลผล" เพื่อดูภาพ');
+};
+
+/* ---- Excel import ---- */
+$('xlsxFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    await ensureLib('XLSX');
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    let data = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
+    data = data.filter(r => r.some(c => String(c).trim() !== ''));
+    if (!data.length) throw new Error('ไม่พบข้อมูลในไฟล์');
+    const nc = Math.max(...data.map(r=>r.length));
+    const pad = r => Array.from({length:nc}, (_,i)=> String(r[i] ?? ''));
+    const head = pad(data[0]).map((c,i)=> c.trim() || `คอลัมน์ ${i+1}`);
+    let rows = data.slice(1).map(pad);
+    if (!rows.length) rows = [head.map(()=> '')];
+    state.cols = head; state.rows = rows;
+    syncAll(); autoRefresh();
+    $('xlsxMsg').textContent = `✔ นำเข้า "${f.name}" แล้ว: ${nc} คอลัมน์ × ${rows.length} แถว`;
+    toast('นำเข้าข้อมูลจาก Excel สำเร็จ');
+  }catch(err){
+    $('xlsxMsg').textContent = '✖ ' + err.message; toast('นำเข้าไม่สำเร็จ: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+/* ============ Slide builder ============ */
+function buildSlideHTML(){
+  const st = STYLES[state.style], c = eff(), n = state.cols.length;
+  const ff = `'${state.font}','Prompt','Sarabun',sans-serif`;
+  const bw = Math.max(1, st.w);
+  const line = `${bw}px solid ${st.bd}`;
+  const inV = st.ln === 'all', inH = st.ln !== 'none';
+  const nr = state.rows.length;
+  const cellBorder = (isLastCol, isLastRow) =>
+    `${inV && !isLastCol ? `border-right:${line};` : ''}${inH && !isLastRow ? `border-bottom:${line};` : ''}`;
+  const fmt = s => esc(s).replace(/\n/g,'<br>') || '&nbsp;';
+
+  let h = `<div class="slide" style="width:1280px;min-height:720px;padding:56px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:${css(st.bg)};font-family:${ff}">`;
+  h += `<div style="width:100%;border:${line};border-radius:${st.r}px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,.14)">`;
+  h += `<table style="width:100%;border-collapse:collapse;table-layout:fixed;border:0">`;
+  if (state.title.trim()){
+    h += `<tr><th colspan="${n}" style="background:${css(st.tBg)};color:${c.t};font-size:${state.sizes.t}px;font-weight:700;text-align:${state.tAlign};padding:22px 30px;${inH ? `border-bottom:${line};` : ''}line-height:1.35;font-family:${ff}">${fmt(state.title)}</th></tr>`;
+  }
+  h += '<tr>';
+  state.cols.forEach((col,i)=>{
+    const inner = st.hl
+      ? `<span style="display:inline-block;background:${st.hl};padding:2px 16px 4px;border-radius:8px">${fmt(col)}</span>`
+      : fmt(col);
+    h += `<th style="background:${css(st.hBg)};color:${c.h};font-size:${state.sizes.h}px;font-weight:${state.boldHead?700:500};text-align:${state.align};padding:18px 20px;line-height:1.4;vertical-align:middle;font-family:${ff};${cellBorder(i===n-1,false)}">${inner}</th>`;
+  });
+  h += '</tr>';
+  state.rows.forEach((r,ri)=>{
+    const bg = (ri % 2 === 1) ? (st.aBg || st.bBg) : st.bBg;
+    h += '<tr>';
+    for (let i=0;i<n;i++){
+      h += `<td style="background:${css(bg)};color:${c.b};font-size:${state.sizes.b}px;font-weight:400;text-align:${state.align};padding:20px 24px;line-height:1.55;vertical-align:middle;word-break:break-word;font-family:${ff};${cellBorder(i===n-1, ri===nr-1)}">${fmt(r[i])}</td>`;
+    }
+    h += '</tr>';
+  });
+  return h + '</table></div></div>';
+}
+
+function fitPreview(){
+  const slide = $('slideHost').firstElementChild; if (!slide) return;
+  const box = $('previewBox');
+  const s = Math.min(1, box.clientWidth / 1280);
+  $('slideHost').style.width = '1280px';
+  $('slideHost').style.transform = `scale(${s})`;
+  box.style.height = (slide.offsetHeight * s) + 'px';
+}
+function renderPreview(){
+  $('slideHost').innerHTML = buildSlideHTML();
+  $('placeholder').style.display = 'none';
+  $('previewBox').style.display = 'block';
+  fitPreview();
+}
+window.addEventListener('resize', fitPreview);
+
+let tmr;
+function autoRefresh(){
+  if (!processed) return;
+  clearTimeout(tmr); tmr = setTimeout(renderPreview, 250);
+}
+
+$('btnProcess').onclick = async ()=>{
+  if (!state.cols.length || !state.rows.length){ toast('กรุณามีอย่างน้อย 1 คอลัมน์และ 1 แถว'); return; }
+  processed = true;
+  await ensureFonts();
+  renderPreview();
+  $('dlPng').disabled = false; $('dlPptx').disabled = false;
+  $('resultCard').scrollIntoView({behavior:'smooth', block:'start'});
+  toast('ประมวลผลเรียบร้อย — ดาวน์โหลดได้เลย');
+};
+
+/* ============ Export ============ */
+async function ensureFonts(font = state.font){
+  try{
+    await Promise.all(['400','500','700'].map(w=> document.fonts.load(`${w} 24px "${font}"`)));
+    await document.fonts.ready;
+  }catch(e){}
+}
+/* โหลดไลบรารีสำรอง ถ้า CDN แรกโหลดไม่ขึ้น */
+const LIBS = {
+  PptxGenJS: ['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'],
+  html2canvas: ['https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js','https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js','https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'],
+  XLSX: ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js','https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js']
+};
+async function ensureLib(name){
+  if (typeof window[name] !== 'undefined') return;
+  for (const url of LIBS[name]){
+    try{
+      await new Promise((ok,ng)=>{ const s = document.createElement('script'); s.src = url; s.onload = ok; s.onerror = ng; document.head.appendChild(s); });
+      if (typeof window[name] !== 'undefined') return;
+    }catch(e){}
+  }
+  throw new Error(`โหลดไลบรารี ${name} ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต แล้วเปิดไฟล์นี้ด้วย Chrome/Edge โดยตรง (ไม่ใช่ในหน้าพรีวิวของแอปอื่น)`);
+}
+function downloadBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 4000);
+}
+async function captureCanvas(html = buildSlideHTML(), font = state.font){
+  await ensureLib('html2canvas');
+  await ensureFonts(font);
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-99999px;top:0;';
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+  try{
+    return await html2canvas(wrap.firstElementChild, {scale:2, backgroundColor:null, useCORS:true, logging:false});
+  } finally { wrap.remove(); }
+}
+function fileBase(){
+  return (state.title.replace(/[\\/:*?"<>|]/g,'').trim().slice(0,40) || 'table');
+}
+async function withBusy(btn, label, fn){
+  const old = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try{ await fn(); } catch(err){ console.error(err); toast('เกิดข้อผิดพลาด: ' + (err && err.message || err), 8000); }
+  finally{ btn.disabled = false; btn.textContent = old; }
+}
+
+$('dlPng').onclick = ()=> withBusy($('dlPng'), '⏳ กำลังสร้าง PNG...', async ()=>{
+  const canvas = await captureCanvas();
+  const blob = await new Promise(res=> canvas.toBlob(res,'image/png'));
+  if (!blob) throw new Error('สร้างไฟล์ภาพไม่สำเร็จ');
+  downloadBlob(blob, fileBase() + '.png');
+  toast('ดาวน์โหลด PNG แล้ว');
+});
+
+$('dlPptx').onclick = ()=> withBusy($('dlPptx'), '⏳ กำลังสร้าง PowerPoint...', async ()=>{
+  await ensureLib('PptxGenJS');
+  const st = STYLES[state.style], c = eff(), n = state.cols.length;
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE';            // 13.33 x 7.5 in
+  const slide = pptx.addSlide();
+  slide.background = { color: hex(st.bg) };
+
+  if ($('pptxImg').checked){
+    const canvas = await captureCanvas();
+    const ratio = canvas.height / canvas.width;
+    let w = 13.33, h = w * ratio;
+    if (h > 7.5){ h = 7.5; w = h / ratio; }
+    slide.addImage({ data: canvas.toDataURL('image/png'), x: (13.33 - w)/2, y: (7.5 - h)/2, w, h });
+  } else {
+    const px2pt = px => Math.round(px * 0.75);
+    const ff = state.font;
+    const N = {type:'none'};
+    const L = {type:'solid', pt: Math.max(0.75, st.w * 0.75), color: hex(st.bd)};
+    const inV = st.ln === 'all', inH = st.ln !== 'none';
+    const hasTitle = !!state.title.trim();
+    const nr = state.rows.length + 1 + (hasTitle ? 1 : 0);
+    const border = (ri, ci, nc) => [
+      ri === 0 ? L : N,
+      ci === nc-1 ? L : (inV ? L : N),
+      ri === nr-1 ? L : (inH ? L : N),
+      ci === 0 ? L : N
+    ];
+    const rows = [], rowH = [];
+    let ri = 0;
+    if (hasTitle){
+      rows.push([{ text: state.title, options: {
+        colspan: n, fill:{color:hex(st.tBg)}, color: c.t.replace('#','').toUpperCase(), bold:true, fontFace: ff,
+        fontSize: px2pt(state.sizes.t), align: state.tAlign, valign:'middle', border: border(ri,0,1) } }]);
+      rowH.push(0.9); ri++;
+    }
+    rows.push(state.cols.map((col,i)=>({ text: col, options: {
+      fill:{color: hex(st.hl || st.hBg)}, color: c.h.replace('#','').toUpperCase(), bold: state.boldHead, fontFace: ff,
+      fontSize: px2pt(state.sizes.h), align: state.align, valign:'middle', border: border(ri,i,n) } })));
+    rowH.push(0.7); ri++;
+    state.rows.forEach((r,k)=>{
+      const bg = (k % 2 === 1) ? (st.aBg || st.bBg) : st.bBg;
+      rows.push(state.cols.map((_,i)=>({ text: r[i] || ' ', options: {
+        fill:{color: hex(bg)}, color: c.b.replace('#','').toUpperCase(), fontFace: ff,
+        fontSize: px2pt(state.sizes.b), align: state.align, valign:'middle', border: border(ri,i,n) } })));
+      rowH.push(0.8); ri++;
+    });
+    slide.addTable(rows, { x:0.5, y:0.5, w:12.33, colW: Array(n).fill(12.33/n), rowH, autoPage:false });
+  }
+  const out = await pptx.write({ outputType: 'blob' });
+  const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+  downloadBlob(blob, fileBase() + '.pptx');
+  toast('ดาวน์โหลด PowerPoint แล้ว');
+});
+
+/* ============ Reset ============ */
+$('btnReset').onclick = ()=>{
+  state = freshState(); processed = false;
+  syncAll();
+  $('slideHost').innerHTML = ''; $('slideHost').style.transform = '';
+  $('previewBox').style.display = 'none'; $('previewBox').style.height = '';
+  $('placeholder').style.display = 'block';
+  $('dlPng').disabled = true; $('dlPptx').disabled = true; $('pptxImg').checked = false;
+  $('xlsxMsg').textContent = 'ยังไม่ได้เลือกไฟล์'; $('xlsxFile').value = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+  toast('รีเซ็ตหน้าเรียบร้อยแล้ว');
+};
+
+/* ============ Mode switch ============ */
+document.querySelectorAll('.mbtn').forEach(b=> b.addEventListener('click', ()=>{
+  const m = b.dataset.mode;
+  document.querySelectorAll('.mbtn').forEach(x=> x.classList.toggle('active', x===b));
+  $('modeTable').hidden = m !== 'table';
+  $('modeQuote').hidden = m !== 'quote';
+  setTimeout(()=>{ fitPreview(); qFitPreview(); }, 30);
+}));
+
+/* ============================================================
+   โหมดภาพ + คำพูด
+   ============================================================ */
+const qbase = {bg:'#ffffff',accent:'#e11d48',qC:'#1f2937',nC:'#111827',rC:'#6b7280',inset:0,r:0,ring:null,panel:null};
+const QS = (n,o) => ({n,...qbase,...o});
+const QSTYLES = [
+  QS('คลาสสิกขาว',{}),
+  QS('ครีมอบอุ่น',{bg:'#fdf6ec',accent:'#d97706',qC:'#451a03',nC:'#78350f',rC:'#a16207',inset:40,r:28}),
+  QS('มืดหรูสีทอง',{bg:'#0f1115',accent:'#f5c451',qC:'#f4f1e8',nC:'#f5c451',rC:'#9ca3af'}),
+  QS('ม่วงชมพูไล่เฉด',{bg:G('#4f46e5','#ec4899'),accent:'#ffffff',qC:'#ffffff',nC:'#ffffff',rC:'#ffe4f1',inset:44,r:32,ring:'#ffffff'}),
+  QS('มินิมอลเทา',{bg:'#f1f2f4',accent:'#111827',qC:'#111827',nC:'#111827',rC:'#6b7280',inset:56}),
+  QS('โอเชียนบลู',{bg:G('#0ea5e9','#1e3a8a'),accent:'#bae6fd',qC:'#ffffff',nC:'#bae6fd',rC:'#e0f2fe'}),
+  QS('มินต์สดใส',{bg:'#ecfdf5',accent:'#10b981',qC:'#064e3b',nC:'#047857',rC:'#3f9b79',inset:44,r:36}),
+  QS('การ์ดพาสเทล',{bg:G('#ffe4ec','#e0e7ff',160),accent:'#f472b6',qC:'#4a1d3a',nC:'#be185d',rC:'#9d6b87',inset:40,r:36,panel:'#ffffff'}),
+  QS('นิตยสารข่าว',{bg:'#f5efe0',accent:'#b91c1c',qC:'#1f1a14',nC:'#b91c1c',rC:'#57534e'}),
+  QS('นีออนไซเบอร์',{bg:'#0b0f1a',accent:'#22f3ff',qC:'#e6faff',nC:'#ff3df2',rC:'#7dd3fc',inset:40,r:12,ring:'#22f3ff'}),
+];
+
+function qFresh(){
+  return { img:null, iw:0, ih:0, fit:'cover', shape:'rl', side:'left', quote:'', name:'', role:'',
+           style:0, font:'Prompt', sizes:{q:40,n:30}, colors:{q:null,n:null} };
+}
+let qs = qFresh();
+let qProcessed = false;
+let qLastK = 1;
+
+const qEff = () => {
+  const st = QSTYLES[qs.style];
+  return { q: qs.colors.q || solid(st.qC), n: qs.colors.n || solid(st.nC), r: solid(st.rC) };
+};
+
+/* รูปทรงรูปภาพ: kind = circle | rect | ellipse */
+const QSHAPES = {
+  cs:{kind:'circle', w:320, h:320},
+  cl:{kind:'circle', w:560, h:560},
+  rs:{kind:'rect',   w:320, h:320},
+  rl:{kind:'rect',   w:null, h:null},   // ใหญ่ = เต็มความสูงสไลด์ (ตามรูปแบบสไลด์)
+  es:{kind:'ellipse',w:300, h:400},
+  el:{kind:'ellipse',w:480, h:640},
+};
+
+/* ตำแหน่งต่าง ๆ บนสไลด์ขนาด 1280x720 px (รองรับรูปทรง + ซ้าย/ขวา) */
+function qGeom(st, shape = qs.shape, side = qs.side){
+  const W = 1280, H = 720, i = st.inset, sh = QSHAPES[shape] || QSHAPES.rl;
+  const big = shape === 'rl';
+  const iw = big ? 560 - 2*i : sh.w, ih = big ? H - 2*i : sh.h;
+  const m = big ? i : (i || 56);                 // ระยะขอบด้านนอกของรูป
+  const ix = side === 'right' ? W - m - iw : m;
+  const iy = big ? i : Math.round((H - ih) / 2);
+  const img = { x:ix, y:iy, w:iw, h:ih, kind:sh.kind };
+  let box, pad = 0;
+  if (st.panel){
+    const gap = Math.max(i, 24); pad = 48;
+    box = side === 'right'
+      ? { x:m,  y:i, w:ix - gap - m, h:H - 2*i }
+      : { x:ix + iw + gap, y:i, w:W - m - (ix + iw + gap), h:H - 2*i };
+  } else {
+    box = side === 'right'
+      ? { x:64, y:0, w:ix - 56 - 64, h:H }
+      : { x:ix + iw + 56, y:0, w:W - 64 - (ix + iw + 56), h:H };
+  }
+  return { img, box, pad };
+}
+const qRadius = (st, g) => g.img.kind === 'rect' ? st.r + 'px' : '50%';
+
+/* ย่อขนาดตัวอักษรอัตโนมัติ ให้ข้อความอยู่ในกรอบทั้งหมด -> คืนค่าสัดส่วน k (<= 1) */
+function qFitK(){
+  const test = k => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-99999px;top:0;visibility:hidden;';
+    wrap.innerHTML = buildQuoteHTML(k);
+    document.body.appendChild(wrap);
+    const box = wrap.querySelector('[data-qbox]'), inner = wrap.querySelector('[data-qtxt]');
+    const g = QSTYLES[qs.style] && qGeom(QSTYLES[qs.style]);
+    const avail = box.clientHeight - 2*g.pad;
+    const ok = inner.offsetHeight <= avail + 1 && inner.scrollWidth <= inner.clientWidth + 1;
+    wrap.remove();
+    return ok;
+  };
+  if (test(1)) return 1;
+  let lo = 0.3, hi = 1;
+  for (let n = 0; n < 9; n++){
+    const mid = (lo + hi) / 2;
+    if (test(mid)) lo = mid; else hi = mid;
+  }
+  return Math.floor(lo * 100) / 100;
+}
+
+const fmtT = s => esc(s).replace(/\n/g,'<br>');
+
+function buildQuoteHTML(k){
+  if (k === undefined) k = qFitK();
+  qLastK = k;
+  const qSz = Math.max(10, Math.round(qs.sizes.q * k)), nSz = Math.max(9, Math.round(qs.sizes.n * k));
+  const st = QSTYLES[qs.style], g = qGeom(st), c = qEff();
+  const ff = `'${qs.font}','Prompt','Sarabun',sans-serif`;
+  const quote = qs.quote.trim(), name = qs.name.trim(), role = qs.role.trim();
+  const mark = ch => `<span style="color:${st.accent};font-size:1.35em;font-weight:700;font-family:Georgia,'Times New Roman',serif">${ch}</span>`;
+
+  let h = `<div class="qslide" style="position:relative;width:1280px;height:720px;overflow:hidden;background:${css(st.bg)};font-family:${ff}">`;
+  // รูปภาพ
+  const imgStyle = qs.img
+    ? `background-color:${qs.fit==='contain' ? 'rgba(0,0,0,.06)' : '#cbd5e1'};background-image:url('${qs.img}');background-size:${qs.fit};background-position:center;background-repeat:no-repeat;`
+    : 'background-color:#cbd5e1;';
+  h += `<div style="position:absolute;left:${g.img.x}px;top:${g.img.y}px;width:${g.img.w}px;height:${g.img.h}px;box-sizing:border-box;border-radius:${qRadius(st,g)};overflow:hidden;${imgStyle}${st.ring ? `border:6px solid ${st.ring};` : ''}">`;
+  if (!qs.img) h += `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:28px;text-align:center;line-height:1.5">👤<br>ยังไม่ได้แนบรูป</div>`;
+  h += '</div>';
+  // ข้อความ
+  h += `<div style="position:absolute;left:${g.box.x}px;top:${g.box.y}px;width:${g.box.w}px;height:${g.box.h}px;box-sizing:border-box;padding:${g.pad}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;${st.panel ? `background:${st.panel};border-radius:32px;` : ''}" data-qbox>`;
+  h += `<div data-qtxt style="flex:none;min-width:0;max-width:100%">`;
+  h += `<div style="font-size:${qSz}px;line-height:1.55;font-weight:500;color:${c.q};word-break:break-word;overflow-wrap:anywhere">${mark('“')}${fmtT(quote)}${mark('”')}</div>`;
+  if (name || role){
+    h += `<div style="width:72px;height:5px;border-radius:3px;background:${st.accent};margin:${Math.round(34*k)}px 0 ${Math.round(20*k)}px"></div>`;
+    if (name) h += `<div style="font-size:${nSz}px;font-weight:700;line-height:1.3;color:${c.n};overflow-wrap:anywhere">${fmtT(name)}</div>`;
+    if (role) h += `<div style="font-size:${Math.round(nSz*0.65)}px;line-height:1.4;color:${c.r};margin-top:6px;overflow-wrap:anywhere">${fmtT(role)}</div>`;
+  }
+  h += '</div></div></div>';
+  return h;
+}
+
+function qFitPreview(){
+  const slide = $('qSlideHost').firstElementChild; if (!slide) return;
+  const box = $('qPreviewBox');
+  const s = Math.min(1, box.clientWidth / 1280);
+  if (!box.clientWidth) return;
+  $('qSlideHost').style.width = '1280px';
+  $('qSlideHost').style.transform = `scale(${s})`;
+  box.style.height = (720 * s) + 'px';
+}
+function qRenderPreview(){
+  $('qSlideHost').innerHTML = buildQuoteHTML();
+  const fi = $('qFitInfo');
+  if (qLastK < 1){ fi.style.display = 'block'; fi.textContent = `ℹ️ ข้อความยาว — ปรับขนาดอัตโนมัติให้พอดีกรอบ (คำพูด ${Math.round(qs.sizes.q*qLastK)}px, ชื่อ ${Math.round(qs.sizes.n*qLastK)}px)`; }
+  else fi.style.display = 'none';
+  $('qPlaceholder').style.display = 'none';
+  $('qPreviewBox').style.display = 'block';
+  qFitPreview();
+}
+window.addEventListener('resize', qFitPreview);
+let qTmr;
+function qAuto(){
+  if (!qProcessed) return;
+  clearTimeout(qTmr); qTmr = setTimeout(qRenderPreview, 250);
+}
+
+/* ---- UI ---- */
+function qMini(st){
+  const g = qGeom(st);
+  const pc = (v, t) => (v / t * 100).toFixed(2) + '%';
+  let h = `<div class="qmini" style="background:${css(st.bg)}">`;
+  if (st.panel) h += `<i style="left:${pc(g.box.x,1280)};top:${pc(g.box.y,720)};width:${pc(g.box.w,1280)};height:${pc(g.box.h,720)};background:${st.panel};border-radius:6px"></i>`;
+  h += `<i style="left:${pc(g.img.x,1280)};top:${pc(g.img.y,720)};width:${pc(g.img.w,1280)};height:${pc(g.img.h,720)};background:linear-gradient(160deg,#94a3b8,#64748b);border-radius:${g.img.kind==='rect' ? (st.r ? 5 : 0)+'px' : '50%'};${st.ring ? `border:1.5px solid ${st.ring};box-sizing:border-box;` : ''}"></i>`;
+  const tx = g.box.x + g.pad + 10, tw = g.box.w - 2*g.pad - 30;
+  h += `<i style="left:${pc(tx,1280)};top:30%;width:${pc(tw*0.9,1280)};height:5%;background:${solid(st.qC)};opacity:.8;border-radius:2px"></i>`;
+  h += `<i style="left:${pc(tx,1280)};top:40%;width:${pc(tw*0.7,1280)};height:5%;background:${solid(st.qC)};opacity:.8;border-radius:2px"></i>`;
+  h += `<i style="left:${pc(tx,1280)};top:56%;width:${pc(tw*0.2,1280)};height:3%;background:${st.accent};border-radius:2px"></i>`;
+  h += `<i style="left:${pc(tx,1280)};top:63%;width:${pc(tw*0.45,1280)};height:5%;background:${solid(st.nC)};border-radius:2px"></i>`;
+  return h + '</div>';
+}
+function qRenderStyles(){
+  $('qStyleList').innerHTML = QSTYLES.map((st,i)=>
+    `<button class="scard ${i===qs.style?'sel':''}" data-qs="${i}">${qMini(st)}<span>${String(i+1).padStart(2,'0')} · ${st.n}</span></button>`
+  ).join('');
+}
+function qSyncColors(){ const e = qEff(); $('qColQ').value = e.q; $('qColN').value = e.n; }
+function qRenderImg(){
+  const has = !!qs.img;
+  $('qThumb').hidden = !has; $('qDropHint').hidden = has;
+  if (has) $('qThumb').src = qs.img;
+  $('qImgClear').disabled = !has;
+  if (!has) $('qImgInfo').textContent = '';
+}
+function qSyncAll(){
+  $('qText').value = qs.quote; $('qName').value = qs.name; $('qRole').value = qs.role;
+  $('qFit').value = qs.fit; $('qFont').value = qs.font; $('qShape').value = qs.shape; $('qSide').value = qs.side;
+  $('qSizeQ').value = qs.sizes.q; $('vQQ').textContent = qs.sizes.q;
+  $('qSizeN').value = qs.sizes.n; $('vQN').textContent = qs.sizes.n;
+  qRenderImg(); qRenderStyles(); qSyncColors();
+}
+
+/* อ่านรูป + ย่อให้ไม่ใหญ่เกินไป */
+function loadImageFile(file){
+  return new Promise((ok, ng)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=> ng(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
+    fr.onload = ()=>{
+      const im = new Image();
+      im.onerror = ()=> ng(new Error('เปิดรูปนี้ไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG'));
+      im.onload = ()=>{
+        const M = 2200;
+        const s = Math.min(1, M / Math.max(im.naturalWidth, im.naturalHeight));
+        const w = Math.max(1, Math.round(im.naturalWidth * s)), h = Math.max(1, Math.round(im.naturalHeight * s));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d');
+        const png = file.type === 'image/png';
+        if (!png){ cx.fillStyle = '#fff'; cx.fillRect(0,0,w,h); }
+        cx.drawImage(im, 0, 0, w, h);
+        ok({ data: cv.toDataURL(png ? 'image/png' : 'image/jpeg', 0.92), w, h });
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function qSetImage(file){
+  if (!file) return;
+  if (!file.type.startsWith('image/')){ toast('กรุณาเลือกไฟล์รูปภาพ', 5000); return; }
+  try{
+    const r = await loadImageFile(file);
+    qs.img = r.data; qs.iw = r.w; qs.ih = r.h;
+    qRenderImg(); $('qImgInfo').textContent = `${file.name} · ${r.w}×${r.h}px`;
+    qAuto();
+  }catch(err){ toast(err.message, 6000); }
+}
+
+/* ---- Events ---- */
+$('qFont').innerHTML = FONTS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('');
+$('qImgFile').addEventListener('change', e=>{ qSetImage(e.target.files[0]); e.target.value = ''; });
+['dragenter','dragover'].forEach(ev=> $('qDrop').addEventListener(ev, e=>{ e.preventDefault(); $('qDrop').classList.add('drag'); }));
+['dragleave','drop'].forEach(ev=> $('qDrop').addEventListener(ev, e=>{ e.preventDefault(); $('qDrop').classList.remove('drag'); }));
+$('qDrop').addEventListener('drop', e=> qSetImage(e.dataTransfer.files[0]));
+$('qImgClear').onclick = ()=>{ qs.img = null; qs.iw = qs.ih = 0; qRenderImg(); qAuto(); };
+$('qFit').addEventListener('change', e=>{ qs.fit = e.target.value; qAuto(); });
+$('qShape').addEventListener('change', e=>{ qs.shape = e.target.value; qRenderStyles(); qAuto(); });
+$('qSide').addEventListener('change', e=>{ qs.side = e.target.value; qRenderStyles(); qAuto(); });
+$('qText').addEventListener('input', e=>{ qs.quote = e.target.value; qAuto(); });
+$('qName').addEventListener('input', e=>{ qs.name = e.target.value; qAuto(); });
+$('qRole').addEventListener('input', e=>{ qs.role = e.target.value; qAuto(); });
+$('qSample').onclick = ()=>{
+  qs.quote = 'สื่อคือช่องทางส่งต่อข้อมูล ไม่ใช่เครื่องการันตีความถูกต้อง';
+  qs.name = 'ชื่อ นามสกุล'; qs.role = 'ตำแหน่ง / ที่มา';
+  qSyncAll(); qAuto(); toast('เติมข้อความตัวอย่างแล้ว');
+};
+$('qStyleList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-qs]'); if (!b) return;
+  qs.style = +b.dataset.qs;
+  document.querySelectorAll('#qStyleList .scard').forEach(x=> x.classList.toggle('sel', x===b));
+  qSyncColors(); qAuto();
+});
+$('qFont').addEventListener('change', async e=>{ qs.font = e.target.value; await ensureFonts(qs.font); qAuto(); });
+$('qSizeQ').addEventListener('input', e=>{ qs.sizes.q = +e.target.value; $('vQQ').textContent = e.target.value; qAuto(); });
+$('qSizeN').addEventListener('input', e=>{ qs.sizes.n = +e.target.value; $('vQN').textContent = e.target.value; qAuto(); });
+$('qColQ').addEventListener('input', e=>{ qs.colors.q = e.target.value; qAuto(); });
+$('qColN').addEventListener('input', e=>{ qs.colors.n = e.target.value; qAuto(); });
+$('qResetColors').onclick = ()=>{ qs.colors = {q:null,n:null}; qSyncColors(); qAuto(); toast('ใช้สีตามรูปแบบแล้ว'); };
+
+$('qBtnProcess').onclick = async ()=>{
+  if (!qs.quote.trim()){ toast('กรุณาใส่คำพูดก่อนประมวลผล', 5000); $('qText').focus(); return; }
+  if (!qs.img) toast('ยังไม่ได้แนบรูป — สไลด์จะแสดงกรอบว่างแทน', 4000);
+  qProcessed = true;
+  await ensureFonts(qs.font);
+  qRenderPreview();
+  $('qDlPng').disabled = false; $('qDlPptx').disabled = false;
+  $('qResultCard').scrollIntoView({behavior:'smooth', block:'start'});
+};
+$('qBtnReset').onclick = ()=>{
+  qs = qFresh(); qProcessed = false;
+  qSyncAll();
+  $('qSlideHost').innerHTML = ''; $('qSlideHost').style.transform = '';
+  $('qPreviewBox').style.display = 'none'; $('qPreviewBox').style.height = ''; $('qFitInfo').style.display = 'none';
+  $('qPlaceholder').style.display = 'block';
+  $('qDlPng').disabled = true; $('qDlPptx').disabled = true; $('qPptxImg').checked = false;
+  toast('รีเซ็ตโหมดภาพ + คำพูดแล้ว');
+};
+
+function qFileBase(){
+  return (qs.name.replace(/[\\/:*?"<>|]/g,'').trim().slice(0,30) || 'quote') + '-quote';
+}
+
+$('qDlPng').onclick = ()=> withBusy($('qDlPng'), '⏳ กำลังสร้าง PNG...', async ()=>{
+  const canvas = await captureCanvas(buildQuoteHTML(), qs.font);
+  const blob = await new Promise(res=> canvas.toBlob(res,'image/png'));
+  if (!blob) throw new Error('สร้างไฟล์ภาพไม่สำเร็จ');
+  downloadBlob(blob, qFileBase() + '.png');
+  toast('ดาวน์โหลด PNG แล้ว');
+});
+
+$('qDlPptx').onclick = ()=> withBusy($('qDlPptx'), '⏳ กำลังสร้าง PowerPoint...', async ()=>{
+  await ensureLib('PptxGenJS');
+  const st = QSTYLES[qs.style], g = qGeom(st), c = qEff();
+  const kf = qFitK();
+  const qSz = Math.max(10, Math.round(qs.sizes.q * kf)), nSz = Math.max(9, Math.round(qs.sizes.n * kf));
+  const I = px => px / 96;                    // px -> นิ้ว
+  const pt = px => Math.round(px * 0.75);     // px -> pt
+  const H = v => v.replace('#','').toUpperCase();
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE';
+  const slide = pptx.addSlide();
+  slide.background = { color: hex(st.bg) };
+
+  if ($('qPptxImg').checked){
+    const canvas = await captureCanvas(buildQuoteHTML(kf), qs.font);
+    slide.addImage({ data: canvas.toDataURL('image/png'), x:0, y:0, w:13.333, h:7.5 });
+  } else {
+    if (st.panel){
+      slide.addShape(pptx.ShapeType.roundRect, { x:I(g.box.x), y:I(g.box.y), w:I(g.box.w), h:I(g.box.h),
+        fill:{color:hex(st.panel)}, line:{color:hex(st.panel), width:0}, rectRadius:0.3 });
+    }
+    if (qs.img){
+      slide.addImage({ data: qs.img, x:I(g.img.x), y:I(g.img.y), w:I(qs.iw), h:I(qs.ih),
+        sizing:{ type: qs.fit, w:I(g.img.w), h:I(g.img.h) }, rounding: g.img.kind !== 'rect' });
+    } else {
+      slide.addShape(g.img.kind === 'rect' ? pptx.ShapeType.rect : pptx.ShapeType.ellipse, { x:I(g.img.x), y:I(g.img.y), w:I(g.img.w), h:I(g.img.h), fill:{color:'CBD5E1'}, line:{color:'CBD5E1', width:0} });
+      slide.addText('ยังไม่ได้แนบรูป', { x:I(g.img.x), y:I(g.img.y), w:I(g.img.w), h:I(g.img.h), align:'center', valign:'middle', color:'64748B', fontSize:20, fontFace:qs.font });
+    }
+    if (st.ring){
+      slide.addShape(g.img.kind === 'rect' ? pptx.ShapeType.rect : pptx.ShapeType.ellipse, { x:I(g.img.x), y:I(g.img.y), w:I(g.img.w), h:I(g.img.h),
+        fill:{color:hex(st.ring), transparency:100}, line:{color:hex(st.ring), width:4.5} });
+    }
+    const quote = qs.quote.trim(), name = qs.name.trim(), role = qs.role.trim();
+    const mk = (t, br) => ({ text:t, options:{ color:hex(st.accent), bold:true, fontSize:pt(qSz*1.35), fontFace:'Georgia', breakLine:!!br } });
+    const runs = [
+      mk('“'),
+      { text:quote, options:{ color:H(c.q), fontSize:pt(qSz), fontFace:qs.font } },
+      mk('”', true)
+    ];
+    if (name) runs.push({ text:name, options:{ color:H(c.n), bold:true, fontSize:pt(nSz), fontFace:qs.font, breakLine:!!role, paraSpaceBefore:24 } });
+    if (role) runs.push({ text:role, options:{ color:H(c.r), fontSize:pt(nSz*0.65), fontFace:qs.font, paraSpaceBefore:name ? 4 : 24 } });
+    slide.addText(runs, { x:I(g.box.x + g.pad), y:I(g.box.y + g.pad), w:I(g.box.w - 2*g.pad), h:I(g.box.h - 2*g.pad),
+      align:'left', valign:'middle', margin:0, fit:'shrink', lineSpacingMultiple:1.15 });
+  }
+  const out = await pptx.write({ outputType: 'blob' });
+  downloadBlob(new Blob([out], { type:'application/vnd.openxmlformats-officedocument.presentationml.presentation' }), qFileBase() + '.pptx');
+  toast('ดาวน์โหลด PowerPoint แล้ว');
+});
+
+/* ============ พับ/เปิด ส่วนรูปแบบ ============ */
+document.querySelectorAll('.card.fold>h2').forEach(h=>{
+  h.setAttribute('role','button'); h.tabIndex = 0; h.title = 'คลิกเพื่อพับ / เปิด';
+  const tg = ()=>{ const c = h.parentElement; c.classList.toggle('closed'); h.setAttribute('aria-expanded', !c.classList.contains('closed')); };
+  h.addEventListener('click', tg);
+  h.addEventListener('keydown', e=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); tg(); } });
+});
+
+/* ============ Init ============ */
+syncAll();
+qSyncAll();
+</script>
+</body>
+</html>
